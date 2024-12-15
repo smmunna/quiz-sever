@@ -15,23 +15,71 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.userController = void 0;
 const user_service_1 = require("./user.service");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+// @ts-ignore
+const bcrypt_1 = __importDefault(require("bcrypt"));
 const user_model_1 = __importDefault(require("./user.model"));
 const sendApiResponse_1 = __importDefault(require("../../lib/ApiResponse/sendApiResponse"));
-// Create user
+// Controller to create a user
 const createUser = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const user = req.body;
+        // Call the service to create the user
         const result = yield user_service_1.UserService.createUserToDB(user);
+        // Send success response if user is created
         (0, sendApiResponse_1.default)(res, 200, true, 'User created successfully', result);
     }
     catch (error) {
+        // Check if the error is due to a user already existing
+        // @ts-ignore
+        if (error.message === 'User already exists') {
+            return res.status(400).json({ message: 'User already exists' });
+        }
+        // Pass other errors to the error handler
         next(error);
     }
 });
 // Get users
 const getUsers = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield user_service_1.UserService.getAllUsers();
-    (0, sendApiResponse_1.default)(res, 200, true, 'Users fetched successfully', result);
+    try {
+        const page = parseInt(req.query.page) || 1; // Default to page 1
+        const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page
+        const result = yield user_service_1.UserService.getAllUsers(page, limit);
+        (0, sendApiResponse_1.default)(res, 200, true, 'Users fetched successfully', {
+            users: result.users,
+            pagination: {
+                totalUsers: result.totalUsers,
+                totalPages: result.totalPages,
+                currentPage: page,
+                limit: limit,
+            },
+        });
+    }
+    catch (error) {
+        next(error); // Pass errors to error-handling middleware
+    }
+});
+// Controller to update user details
+const updateUser = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const userId = req.params.id; // Assume the user ID is passed in the URL
+        const updatedData = req.body; // The data you want to update
+        const result = yield user_service_1.UserService.updateUserInDB(userId, updatedData);
+        (0, sendApiResponse_1.default)(res, 200, true, 'User updated successfully', result);
+    }
+    catch (error) {
+        next(error);
+    }
+});
+// Controller to delete user
+const deleteUser = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const userId = req.params.id; // Assume the user ID is passed in the URL
+        const result = yield user_service_1.UserService.deleteUserFromDB(userId);
+        (0, sendApiResponse_1.default)(res, 200, true, 'User deleted successfully', result);
+    }
+    catch (error) {
+        next(error);
+    }
 });
 /**
  * JWT GENERATE TOKEN WHEN SIGN IN USER
@@ -41,16 +89,17 @@ const getUsers = (req, res, next) => __awaiter(void 0, void 0, void 0, function*
  * */
 const signInUser = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const email = req.body.email;
-    // const password = req.body.password;
-    // const user = email
-    /**
-     * You can check the user email and password Here ;
-     * If successfully login user, then sign token will be generated else Unauthorized user,Invalid Login
-     * */
+    const password = req.body.password;
     // Check if the email exists in the database
     const user = yield user_model_1.default.findOne({ email });
+    // @ts-ignore
+    const isPasswordValid = yield bcrypt_1.default.compare(password, user.password);
     if (!user) {
         return res.status(401).json({ message: 'Invalid email or password' });
+    }
+    // Compare the password with the hashed password in the database
+    if (!isPasswordValid) {
+        return res.status(401).json({ message: 'Invalid email or password.' });
     }
     // Sign in jwt token
     const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
@@ -227,6 +276,8 @@ const deleteFileData = (req, res) => __awaiter(void 0, void 0, void 0, function*
 exports.userController = {
     createUser,
     getUsers,
+    updateUser,
+    deleteUser,
     signInUser,
     fileUpload,
     deleteFileData

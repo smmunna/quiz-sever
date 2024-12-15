@@ -6,6 +6,9 @@ import { userRoutes } from './app/modules/user/user.route'
 import helmet from 'helmet'
 import { orderRoutes } from './app/modules/orders/orders.route'
 import { orderController } from './app/modules/orders/orders.controller'
+import { subjectRoutes } from './app/modules/subjects/subject.route'
+import { topicRoutes } from './app/modules/topics/topic.route'
+import { questionRoutes } from './app/modules/questions/question.route'
 
 const app = express()
 
@@ -30,7 +33,7 @@ app.use('/cancel/:tranId', orderController.cancel)
 
 
 // Allow only requests from a specific domain, frontend domain url eg. http://www.example.com
-const allowedDomains = ['http://localhost:5173']; // You can add more domains by separating with comma.
+const allowedDomains = ['http://localhost:5173','https://quiz.techzaint.com']; // You can add more domains by separating with comma.
 // default React.js frontend local domain url
 app.use(cors({
     origin: function (origin: any, callback) {
@@ -47,6 +50,9 @@ app.use(cors({
 
 app.use('/api/v1/users', userRoutes) //users routes
 app.use('/api/v1/orders', orderRoutes) //orders routes
+app.use('/api/v1/subjects', subjectRoutes) //subjects routes
+app.use('/api/v1/topics', topicRoutes) //topics routes
+app.use('/api/v1/questions', questionRoutes) //questions routes
 
 /*-------------------HANDLE ALL OF YOUR ROUTES HERE ----------------------*/
 
@@ -55,10 +61,11 @@ app.use('/api/v1/orders', orderRoutes) //orders routes
 app.get('/', (req: Request, res: Response) => {
     res.status(200).json({
         success: true,
-        message: 'Welcome to Node.js Server',
+        message: 'Welcome to Quiz App Server',
         author: 'Minhazul Abedin Munna',
         github: 'https://github.com/smmunna',
         linkedin: 'https://www.linkedin.com/in/minhazulabedinmunna/',
+        website: 'https://www.techzaint.com'
     })
 })
 

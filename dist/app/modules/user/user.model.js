@@ -8,9 +8,10 @@ const bcrypt_1 = __importDefault(require("bcrypt"));
 // Creating Schema
 const userSchema = new mongoose_1.Schema({
     username: { type: String, required: true },
-    email: { type: String },
+    email: { type: String, required: true },
     password: { type: String, required: true },
-    role: { type: String }
+    role: { type: String, default: 'user' },
+    status: { type: String, default: 'basic' }
 });
 // Pre-save hook to hash the password
 userSchema.pre('save', function (next) {
